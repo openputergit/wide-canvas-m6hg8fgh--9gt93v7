@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HabitQuest - Gamified Habit Formation</title>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f0f9ff;
+        }
+        .habit-card:hover {
+            transform: translateY(-5px);
+            transition: transform 0.3s ease;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .badge-earned {
+            animation: bounce 1s ease infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="bg-sky-600 text-white p-4">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold">HabitQuest</h1>
+                <div class="flex items-center space-x-4">
+                    <span class="flex items-center"><i class="bi bi-star-fill text-yellow-300 mr-2"></i><span id="points">0</span></span>
+                    <button class="bg-sky-700 px-4 py-2 rounded-lg hover:bg-sky-800" id="profile-btn">
+                        <i class="bi bi-person-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="container mx-auto px-4 py-8">
+            <!-- Daily Quest Section -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold mb-4">Today's Quests</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="habits-container">
+                    <!-- Habits will be dynamically added here -->
+                </div>
+            </section>
+
+            <!-- Achievement Section -->
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold mb-4">Achievements</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" id="achievements-container">
+                    <!-- Achievements will be dynamically added here -->
+                </div>
+            </section>
+
+            <!-- Leaderboard Section -->
+            <section>
+                <h2 class="text-2xl font-bold mb-4">Leaderboard</h2>
+                <div class="bg-white rounded-lg shadow-lg p-4">
+                    <div id="leaderboard-container">
+                        <!-- Leaderboard entries will be dynamically added here -->
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Sample data
+        const habits = [
+            { id: 1, name: "Morning Exercise", points: 10, icon: "bi-bicycle" },
+            { id: 2, name: "Healthy Breakfast", points: 5, icon: "bi-egg-fried" },
+            { id: 3, name: "Reading", points: 8, icon: "bi-book" },
+            { id: 4, name: "Meditation", points: 7, icon: "bi-peace" },
+            { id: 5, name: "Water Intake", points: 6, icon: "bi-droplet" },
+            { id: 6, name: "Sleep Schedule", points: 9, icon: "bi-moon-stars" }
+        ];
+
+        const achievements = [
+            { id: 1, name: "Early Bird", icon: "bi-sunrise", description: "Complete morning routine for 7 days" },
+            { id: 2, name: "Bookworm", icon: "bi-book-half", description: "Read for 30 days straight" },
+            { id: 3, name: "Zen Master", icon: "bi-peace", description: "Meditate for 14 days" },
+            { id: 4, name: "Health Guru", icon: "bi-heart-pulse", description: "Complete all health habits" },
+            { id: 5, name: "Consistency King", icon: "bi-trophy", description: "30-day streak" },
+            { id: 6, name: "Hydration Hero", icon: "bi-droplet-fill", description: "Track water intake for 10 days" }
+        ];
+
+        let totalPoints = 0;
+        const completedHabits = new Set();
+
+        // Initialize habits
+        function initializeHabits() {
+            const container = document.getElementById('habits-container');
+            habits.forEach(habit => {
+                const card = document.createElement('div');
+                card.className = 'habit-card bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <i class="bi ${habit.icon} text-3xl text-sky-600"></i>
+                        <span class="bg-sky-100 text-sky-800 px-3 py-1 rounded-full text-sm">${habit.points} pts</span>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">${habit.name}</h3>
+                    <button onclick="completeHabit(${habit.id})" class="complete-btn w-full bg-sky-500 text-white py-2 rounded-lg hover:bg-sky-600 transition-colors duration-300">
+                        Complete
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Initialize achievements
+        function initializeAchievements() {
+            const container = document.getElementById('achievements-container');
+            achievements.forEach(achievement => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-4 rounded-lg shadow-lg text-center';
+                card.innerHTML = `
+                    <i class="bi ${achievement.icon} text-3xl text-gray-400 mb-2"></i>
+                    <h4 class="font-semibold text-sm mb-1">${achievement.name}</h4>
+                    <p class="text-xs text-gray-600">${achievement.description}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Initialize leaderboard
+        function initializeLeaderboard() {
+            const container = document.getElementById('leaderboard-container');
+            const users = [
+                { name: "User 1", points: 450 },
+                { name: "User 2", points: 380 },
+                { name: "User 3", points: 320 },
+                { name: "User 4", points: 290 },
+                { name: "You", points: totalPoints }
+            ].sort((a, b) => b.points - a.points);
+
+            users.forEach((user, index) => {
+                const entry = document.createElement('div');
+                entry.className = 'flex items-center justify-between p-3 border-b last:border-b-0';
+                entry.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="font-bold mr-4">#${index + 1}</span>
+                        <span class="${user.name === 'You' ? 'text-sky-600 font-bold' : ''}">${user.name}</span>
+                    </div>
+                    <span class="font-semibold">${user.points} pts</span>
+                `;
+                container.appendChild(entry);
+            });
+        }
+
+        // Complete habit function
+        function completeHabit(habitId) {
+            if (!completedHabits.has(habitId)) {
+                const habit = habits.find(h => h.id === habitId);
+                totalPoints += habit.points;
+                document.getElementById('points').textContent = totalPoints;
+                completedHabits.add(habitId);
+
+                // Update button state
+                const buttons = document.getElementsByClassName('complete-btn');
+                Array.from(buttons).forEach(btn => {
+                    if (btn.parentElement.querySelector('h3').textContent === habit.name) {
+                        btn.textContent = 'Completed';
+                        btn.disabled = true;
+                        btn.className = 'w-full bg-green-500 text-white py-2 rounded-lg cursor-not-allowed';
+                    }
+                });
+
+                // Check for achievements
+                checkAchievements();
+            }
+        }
+
+        // Check achievements
+        function checkAchievements() {
+            if (completedHabits.size >= 3) {
+                const achievementIcons = document.querySelectorAll('#achievements-container i');
+                achievementIcons[0].className = 'bi bi-trophy-fill text-3xl text-yellow-500 badge-earned mb-2';
+            }
+        }
+
+        // Initialize the app
+        window.onload = () => {
+            initializeHabits();
+            initializeAchievements();
+            initializeLeaderboard();
+        };
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
